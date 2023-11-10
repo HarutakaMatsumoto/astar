@@ -4,12 +4,10 @@
 //
 // An example from Stuart Russell and Peter Norvig's
 // “Artificial Intelligence. A Modern Approach”, 3rd ed., 2009, p. 68.
-package astar_test
+package astar
 
 import (
 	"fmt"
-
-	"github.com/pietv/astar"
 )
 
 type Graph struct {
@@ -21,7 +19,7 @@ func (g Graph) Start() interface{} { return "Arad" }
 func (g Graph) Finish() bool       { return "Bucharest" == g.curr }
 
 func (g *Graph) Move(state interface{}) { g.curr = state.(string) }
-func (g Graph) Successors() []interface{} {
+func (g Graph) Successors(transitions map[interface{}]interface{}) []interface{} {
 	successors := []interface{}{}
 	for succ := range g.edges[g.curr] {
 		successors = append(successors, succ)
@@ -85,7 +83,7 @@ func ExampleSearch_graphTraversal() {
 			"Vaslui":         {"Urziceni": 142, "Iași": 92},
 			"Zerind":         {"Arad": 75, "Oradea": 71},
 		}}
-	if path, _, err := astar.Search(g); err == nil {
+	if path, _, err := Search(g); err == nil {
 		fmt.Printf("%q\n", path)
 	}
 	// Output: ["Arad" "Sibiu" "Râmnicu Vâlcea" "Pitești" "Bucharest"]

@@ -13,8 +13,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/pietv/astar"
-	"golang.org/x/crypto/ssh/terminal"
+	"github.com/HarutakaMatsumoto/astar"
+	terminal "golang.org/x/term"
 )
 
 var (

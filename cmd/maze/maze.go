@@ -109,7 +109,7 @@ func (m maze) Estimate(neighbor interface{}) float64 {
 	return estimateFunc(m.finish, neighbor)
 }
 
-func (m maze) Successors() []interface{} {
+func (m maze) Successors(transitions map[interface{}]interface{}) []interface{} {
 	successors := []interface{}{}
 
 	checkLocation := func(i, j int) {
