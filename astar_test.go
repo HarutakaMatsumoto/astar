@@ -1,16 +1,8 @@
-package astar_test
+package astar
 
 import (
-	"math/rand"
 	"testing"
-	"time"
-
-	. "github.com/pietv/astar"
 )
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 type graph struct {
 	edges map[string]map[string]float64
@@ -27,7 +19,7 @@ var (
 func (g graph) Start() interface{}      { return Start }
 func (g graph) Finish() bool            { return g.curr == Finish }
 func (g *graph) Move(state interface{}) { g.curr = state.(string) }
-func (g graph) Successors() []interface{} {
+func (g graph) Successors(transitions map[interface{}]interface{}) []interface{} {
 	successors := []interface{}{}
 	for succ := range g.edges[g.curr] {
 		successors = append(successors, succ)

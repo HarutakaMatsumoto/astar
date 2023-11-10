@@ -22,13 +22,11 @@
 //       +-----+   +----+
 //        9 oz.     4 oz.
 //
-package astar_test
+package astar
 
 import (
 	"os"
 	"text/template"
-
-	"github.com/pietv/astar"
 )
 
 // Glasses’ capacities and the goal.
@@ -53,7 +51,7 @@ func (s State) Finish() bool {
 func (s *State) Move(x interface{})            { *s = x.(State) }
 func (s State) Cost(x interface{}) float64     { return 1 }
 func (s State) Estimate(x interface{}) float64 { return 1 }
-func (s State) Successors() []interface{} {
+func (s State) Successors(transitions map[interface{}]interface{}) []interface{} {
 	succ := []interface{}{}
 
 	First, Second, CapFirst, CapSecond := s.First, s.Second, s.p.CapFirst, s.p.CapSecond
@@ -91,7 +89,7 @@ const PouringTmpl = `
 `
 
 func ExampleSearch_pouringPuzzle() {
-	if path, _, err := astar.Search(&State{p: &Puzzle{
+	if path, _, err := Search(&State{p: &Puzzle{
 		CapFirst:  9,
 		CapSecond: 4,
 		Goal:      6,

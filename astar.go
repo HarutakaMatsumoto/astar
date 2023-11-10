@@ -78,7 +78,7 @@ type Interface interface {
 	Move(interface{})
 
 	// Available moves from the current state.
-	Successors() []interface{}
+	Successors(transitions map[interface{}]interface{}) []interface{}
 
 	// Path cost between the current and the given state.
 	Cost(interface{}) float64
@@ -178,7 +178,7 @@ func Search(p Interface) ([]interface{}, []interface{}, error) {
 			}(), steps, nil
 		}
 
-		for _, succ := range p.Successors() {
+		for _, succ := range p.Successors(transitions) {
 			// Don't re-explore.
 			if explored[succ] {
 				continue
