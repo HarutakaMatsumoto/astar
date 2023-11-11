@@ -1,5 +1,5 @@
-// Finding the shortest path between Arad and Bucharest 
-// on a Romanian road map fragment. The road map is represented 
+// Finding the shortest path between Arad and Bucharest
+// on a Romanian road map fragment. The road map is represented
 // as an undirected graph; edge costs are distances between cities.
 //
 // An example from Stuart Russell and Peter Norvig's
@@ -7,7 +7,7 @@
 package astar
 
 import (
-	"fmt"
+	"testing"
 )
 
 type Graph struct {
@@ -60,7 +60,7 @@ func (g Graph) Estimate(given interface{}) float64 {
 	return estimates[given.(string)]
 }
 
-func ExampleSearch_graphTraversal() {
+func TestSearch_graphTraversal(t *testing.T) {
 	g := &Graph{
 		edges: map[string]map[string]float64{
 			"Arad":           {"Zerind": 75, "Timișoara": 118, "Sibiu": 140},
@@ -82,9 +82,22 @@ func ExampleSearch_graphTraversal() {
 			"Urziceni":       {"Bucharest": 85, "Vaslui": 142, "Hârșova": 98},
 			"Vaslui":         {"Urziceni": 142, "Iași": 92},
 			"Zerind":         {"Arad": 75, "Oradea": 71},
-		}}
-	if path, _, err := Search(g); err == nil {
-		fmt.Printf("%q\n", path)
+		},
 	}
-	// Output: ["Arad" "Sibiu" "Râmnicu Vâlcea" "Pitești" "Bucharest"]
+	succesfulPath := []string{"Arad", "Sibiu", "Râmnicu Vâlcea", "Pitești", "Bucharest"}
+
+	path, _, error := Search(g)
+	if error != nil {
+		t.Error("Expected no error, got", error)
+	}
+
+	if len(path) != len(succesfulPath) {
+		t.Error("Expected path to Bucharest from Arad to be ", succesfulPath, ", got", path)
+	}
+
+	for i, city := range path {
+		if city != succesfulPath[i] {
+			t.Error("Expected path to Bucharest from Arad to be ", succesfulPath, ", got", path)
+		}
+	}
 }

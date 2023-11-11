@@ -60,10 +60,6 @@ Examples:
 	os.Exit(2)
 }
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
-
 func readFile(filename string) []string {
 	in, err := os.Open(filename)
 	if err != nil {
@@ -90,6 +86,8 @@ func readFile(filename string) []string {
 }
 
 func main() {
+	start := time.Now()
+
 	flag.Usage = usage
 	flag.Parse()
 
@@ -164,4 +162,6 @@ func main() {
 		Title: title,
 		Maze:  maze.drawMaze(path, steps),
 	})
+
+	fmt.Print("Time: ", time.Since(start), "\n")
 }
