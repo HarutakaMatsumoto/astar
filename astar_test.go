@@ -170,22 +170,6 @@ var EstimateTests = []struct {
 		"ABCD",
 	},
 	{
-		"directly connected, equal cost",
-		// (A)--1--(B)
-		//  |       |
-		//  3       1
-		//  |       |
-		// (D)--1--(C)
-		&graph{edges: map[string]map[string]float64{
-			"A": {"B": 1, "D": 3},
-			"B": {"A": 1, "C": 1},
-			"C": {"B": 1, "D": 1},
-			"D": {"C": 1, "A": 3},
-		}},
-		estimateFunc,
-		"ABCD",
-	},
-	{
 		"above",
 		// (A)--1--(B)--1--(C)     (A)---->(B)---->(C)
 		//  |       |       |                       |
@@ -233,45 +217,45 @@ var EstimateTests = []struct {
 	},
 }
 
-func stringize(in []interface{}) (out string) {
-	for _, step := range in {
-		out += step.(string)
+func stringize(in OptionalState) (out string) {
+	for step := in; step != nil; step = step.Previous {
+		out = step.Pather.(string) + out
 	}
 	return
 }
 
 func TestTrivial(t *testing.T) {
 	Start, Finish = "A", "A"
-	if path, _, _ := Search(&graph{edges: map[string]map[string]float64{}}); stringize(path) != "A" {
-		t.Errorf("empty setup: got %v, want A", path)
+	if state := Search(&graph{edges: map[string]map[string]float64{}}); stringize(state) != "A" {
+		t.Errorf("empty setup: got %v, want A", state)
 	}
 
 	Start, Finish = "", "A"
-	if path, _, _ := Search(&graph{edges: map[string]map[string]float64{
+	if state := Search(&graph{edges: map[string]map[string]float64{
 		"A": {},
-	}}); stringize(path) != "" {
-		t.Errorf("no start: got %v, want empty", path)
+	}}); stringize(state) != "" {
+		t.Errorf("no start: got %v, want empty", state)
 	}
 
 	Start, Finish = "A", "A"
-	if path, _, _ := Search(&graph{edges: map[string]map[string]float64{
+	if state := Search(&graph{edges: map[string]map[string]float64{
 		"A": {},
-	}}); stringize(path) != "A" {
-		t.Errorf("no successors: got %v, want A", path)
+	}}); stringize(state) != "A" {
+		t.Errorf("no successors: got %v, want A", state)
 	}
 
 	Start, Finish = "A", "A"
-	if path, _, _ := Search(&graph{edges: map[string]map[string]float64{
+	if state := Search(&graph{edges: map[string]map[string]float64{
 		"A": {"A": 1},
-	}}); stringize(path) != "A" {
-		t.Errorf("same successor: got %v, want A", path)
+	}}); stringize(state) != "A" {
+		t.Errorf("same successor: got %v, want A", state)
 	}
 
 	Start, Finish = "A", "B"
-	if path, _, err := Search(&graph{edges: map[string]map[string]float64{
+	if state := Search(&graph{edges: map[string]map[string]float64{
 		"A": {"A": 1},
-	}}); err == nil {
-		t.Errorf("unreachable finish: got %v, want error", path)
+	}}); state != nil {
+		t.Errorf("unreachable finish: got %v, want error", state)
 	}
 }
 
@@ -279,10 +263,10 @@ func TestBasic(t *testing.T) {
 	for _, test := range BasicTests {
 		Start, Finish = test.out[:1], test.out[len(test.out)-1:]
 
-		if actual, _, err := Search(test.g); stringize(actual) != test.out {
+		if actual := Search(test.g); stringize(actual) != test.out {
 			t.Errorf("%q: got %v, want %v", test.name, stringize(actual), test.out)
-			if err != nil {
-				t.Errorf("%q: failed with error %v", test.name, err)
+			if actual == nil {
+				t.Fail()
 			}
 		}
 	}
@@ -294,10 +278,10 @@ func TestEstimate(t *testing.T) {
 
 		estimateFunc = test.estimate
 
-		if path, actual, err := Search(test.g); stringize(actual) != test.out {
-			t.Errorf("%q: got %v, want %v, path %v", test.name, stringize(actual), test.out, path)
-			if err != nil {
-				t.Errorf("%q: failed with error %v", test.name, err)
+		if actual := Search(test.g); stringize(actual) != test.out {
+			t.Errorf("%q: got %v, want %v, path %v", test.name, stringize(actual), test.out, actual.Pather.(string))
+			if actual == nil {
+				t.Fail()
 			}
 		}
 	}

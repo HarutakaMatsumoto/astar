@@ -89,11 +89,19 @@ const PouringTmpl = `
 `
 
 func ExampleSearch_pouringPuzzle() {
-	if path, _, err := Search(&State{p: &Puzzle{
+	if state := Search(&State{p: &Puzzle{
 		CapFirst:  9,
 		CapSecond: 4,
 		Goal:      6,
-	}}); err == nil {
+	}}); state != nil {
+		path := []State{}
+		for ; state != nil; state = state.Previous {
+			path = append(path, state.Pather.(State))
+		}
+		for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
+			path[i], path[j] = path[j], path[i]
+		}
+
 		template.Must(template.New("Pouring Puzzle").Parse(PouringTmpl)).Execute(os.Stdout, path)
 	}
 	// Output:

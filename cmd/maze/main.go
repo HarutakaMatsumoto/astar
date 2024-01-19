@@ -150,8 +150,8 @@ func main() {
 		medium = "File"
 	}
 
-	path, steps, err := astar.Search(maze)
-	if err != nil {
+	state := astar.Search(maze)
+	if state == nil {
 		title = "Yikes! Could not find the path for this one"
 	}
 
@@ -160,7 +160,7 @@ func main() {
 		Maze  [][]string
 	}{
 		Title: title,
-		Maze:  maze.drawMaze(path, steps),
+		Maze:  maze.drawMaze(state),
 	})
 
 	fmt.Print("Time: ", time.Since(start), "\n")

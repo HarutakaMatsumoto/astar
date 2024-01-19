@@ -193,15 +193,11 @@ func new(lines []string) *maze {
 
 // drawMaze applies path and explored states to a maze
 // and returns it as a matrix of strings.
-func (m *maze) drawMaze(path, steps []interface{}) [][]string {
+func (m *maze) drawMaze(state astar.OptionalState) [][]string {
 	states := map[location]string{}
 
-	for _, state := range steps {
-		states[state.(location)] = stepRune
-	}
-
-	for _, state := range path {
-		states[state.(location)] = pathRune
+	for ; state != nil; state = state.Previous {
+		states[state.Pather.(location)] = pathRune
 	}
 
 	maze := make([][]string, len(m.maze))

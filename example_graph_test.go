@@ -86,18 +86,20 @@ func TestSearch_graphTraversal(t *testing.T) {
 	}
 	succesfulPath := []string{"Arad", "Sibiu", "Râmnicu Vâlcea", "Pitești", "Bucharest"}
 
-	path, _, error := Search(g)
-	if error != nil {
-		t.Error("Expected no error, got", error)
+	state := Search(g)
+	if state == nil {
+		t.Error("Expected state")
 	}
 
-	if len(path) != len(succesfulPath) {
-		t.Error("Expected path to Bucharest from Arad to be ", succesfulPath, ", got", path)
-	}
-
-	for i, city := range path {
-		if city != succesfulPath[i] {
-			t.Error("Expected path to Bucharest from Arad to be ", succesfulPath, ", got", path)
+	i := len(succesfulPath) - 1
+	for ; state != nil; state = state.Previous {
+		city := state.Pather.(string)
+		if i < 0 {
+			t.Error("The path is too long!: ", city)
 		}
+		if city != succesfulPath[i] {
+			t.Error("Expected ", succesfulPath[i], " got ", city)
+		}
+		i -= 1
 	}
 }

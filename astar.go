@@ -58,11 +58,7 @@ package astar
 
 import (
 	"container/heap"
-	"errors"
 )
-
-// ErrNotFound means that the final state cannot be reached from the given start state.
-var ErrNotFound = errors.New("final state is not reachable")
 
 // Interface describes a type suitable for A* search. Any type can do as long as
 // it can change its current state and tell legal moves from it.
@@ -71,7 +67,7 @@ type Interface interface {
 	// Initial state.
 	Start() interface{}
 
-	// Is this state final?
+	// Is this state final or canceled?
 	Finish() bool
 
 	// Move to a new state.
@@ -129,10 +125,10 @@ func (pq *states) Pop() interface{} {
 }
 
 // Search finds the p.Finish() state from the given p.Start() state by
-// invoking p.Successors() and p.Move() at each step. Search returns two slices:
-// 1) the shortest path to the final state, and 2) a sequence of explored states.
-// If the shortest path cannot be found, ErrNotFound error is returned.
-func Search(p Interface) ([]interface{}, []interface{}, error) {
+// invoking p.Successors() and p.Move() at each step.
+// Search returns the final state.
+// If the shortest path cannot be found, nil is returned.
+func Search(p Interface) OptionalState {
 	// Priority queue of states on the frontier.
 	// Initialized with the start state.
 	pq := states{{Pather: p.Start(), Estimate: p.Estimate(p.Start())}}
@@ -140,9 +136,6 @@ func Search(p Interface) ([]interface{}, []interface{}, error) {
 
 	// States currently on the frontier.
 	queuedLinks := map[interface{}]*state{}
-
-	// Sequence of states in the order they have been explored.
-	steps := []interface{}{}
 
 	p.Move(p.Start())
 
@@ -155,19 +148,10 @@ func Search(p Interface) ([]interface{}, []interface{}, error) {
 		// Move to the new state.
 		p.Move(current.Pather)
 
-		steps = append(steps, current.Pather)
-
 		// If the state is final, terminate.
 		if p.Finish() {
 			// Reconstruct the path from finish to start.
-			return func() []interface{} {
-				path := []interface{}{current.Pather}
-				for current = current.Previous; current != nil; current = current.Previous {
-					// Reverse.
-					path = append([]interface{}{current.Pather}, path...)
-				}
-				return path
-			}(), steps, nil
+			return current
 		}
 
 		for _, succ := range p.Successors(current) {
@@ -202,5 +186,5 @@ func Search(p Interface) ([]interface{}, []interface{}, error) {
 		}
 	}
 
-	return nil, steps, ErrNotFound
+	return nil
 }
