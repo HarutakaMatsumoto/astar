@@ -51,7 +51,7 @@ func (s State) Finish() bool {
 func (s *State) Move(x interface{})            { *s = x.(State) }
 func (s State) Cost(x interface{}) float64     { return 1 }
 func (s State) Estimate(x interface{}) float64 { return 1 }
-func (s State) Successors(transitions map[interface{}]interface{}) []interface{} {
+func (s State) Successors(current StatePointer) []interface{} {
 	succ := []interface{}{}
 
 	First, Second, CapFirst, CapSecond := s.First, s.Second, s.p.CapFirst, s.p.CapSecond

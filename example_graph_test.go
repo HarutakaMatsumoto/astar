@@ -19,7 +19,7 @@ func (g Graph) Start() interface{} { return "Arad" }
 func (g Graph) Finish() bool       { return "Bucharest" == g.curr }
 
 func (g *Graph) Move(state interface{}) { g.curr = state.(string) }
-func (g Graph) Successors(transitions map[interface{}]interface{}) []interface{} {
+func (g Graph) Successors(current StatePointer) []interface{} {
 	successors := []interface{}{}
 	for succ := range g.edges[g.curr] {
 		successors = append(successors, succ)

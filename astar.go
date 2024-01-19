@@ -78,7 +78,7 @@ type Interface interface {
 	Move(interface{})
 
 	// Available moves from the current state.
-	Successors(transitions map[interface{}]interface{}) []interface{}
+	Successors(current StatePointer) []interface{}
 
 	// Path cost between the current and the given state.
 	Cost(interface{}) float64
@@ -88,17 +88,23 @@ type Interface interface {
 	Estimate(interface{}) float64
 }
 
+type OptionalState *state
+type StatePointer *state
+
 type state struct {
-	state          interface{}
-	cost, estimate float64
+	Pather          interface{}
+	Previous   OptionalState
+	Cost, Estimate float64
+
 	index          int
+	isExplored     bool
 }
 
 type states []*state
 
 func (pq states) Len() int           { return len(pq) }
 func (pq states) Empty() bool        { return len(pq) == 0 }
-func (pq states) Less(i, j int) bool { return pq[i].cost+pq[i].estimate < pq[j].cost+pq[j].estimate }
+func (pq states) Less(i, j int) bool { return pq[i].Cost+pq[i].Estimate < pq[j].Cost+pq[j].Estimate }
 func (pq states) Swap(i, j int) {
 	pq[i], pq[j] = pq[j], pq[i]
 
@@ -129,18 +135,11 @@ func (pq *states) Pop() interface{} {
 func Search(p Interface) ([]interface{}, []interface{}, error) {
 	// Priority queue of states on the frontier.
 	// Initialized with the start state.
-	pq := states{{state: p.Start(), estimate: p.Estimate(p.Start())}}
+	pq := states{{Pather: p.Start(), Estimate: p.Estimate(p.Start())}}
 	heap.Init(&pq)
 
 	// States currently on the frontier.
 	queuedLinks := map[interface{}]*state{}
-
-	// States explored so far.
-	explored := map[interface{}]bool{}
-
-	// State transitions from start to finish (to reconstruct
-	// the shortest path at the end of the search).
-	transitions := map[interface{}]interface{}{}
 
 	// Sequence of states in the order they have been explored.
 	steps := []interface{}{}
@@ -151,60 +150,54 @@ func Search(p Interface) ([]interface{}, []interface{}, error) {
 	for !pq.Empty() {
 		// Pick a state with a minimum Cost() + Estimate() value.
 		current := heap.Pop(&pq).(*state)
-		delete(queuedLinks, current.state)
-		explored[current.state] = true
+		current.isExplored = true
 
 		// Move to the new state.
-		p.Move(current.state)
+		p.Move(current.Pather)
 
-		steps = append(steps, current.state)
+		steps = append(steps, current.Pather)
 
 		// If the state is final, terminate.
 		if p.Finish() {
 			// Reconstruct the path from finish to start.
 			return func() []interface{} {
-				path := []interface{}{current.state}
-				for {
-					if _, ok := transitions[current.state]; !ok {
-						break
-					}
-					current.state = transitions[current.state]
-
+				path := []interface{}{current.Pather}
+				for current = current.Previous; current != nil; current = current.Previous {
 					// Reverse.
-					path = append([]interface{}{current.state}, path...)
-
+					path = append([]interface{}{current.Pather}, path...)
 				}
 				return path
 			}(), steps, nil
 		}
 
-		for _, succ := range p.Successors(transitions) {
+		for _, succ := range p.Successors(current) {
 			// Don't re-explore.
-			if explored[succ] {
+			queuedState, ok := queuedLinks[succ]
+			if ok && queuedState.isExplored {
 				continue
 			}
 
 			// Path cost so far.
-			cost := current.cost + p.Cost(succ)
+			cost := current.Cost + p.Cost(succ)
 
 			// Add a successor to the frontier.
-			if queuedState, ok := queuedLinks[succ]; ok {
+			if ok {
 				// If the successor is already on the frontier,
 				// update its path cost.
-				if cost < queuedState.cost {
-					queuedState.cost = cost
+				if cost < queuedState.Cost {
+					queuedState.Cost = cost
 					heap.Fix(&pq, queuedState.index)
-					transitions[succ] = current.state
+					queuedState.Previous = current
 				}
 			} else {
 				state := state{
-					state:    succ,
-					cost:     cost,
-					estimate: p.Estimate(succ),
+					Pather:    succ,
+					Previous: current,
+					Cost:     cost,
+					Estimate: p.Estimate(succ),
 				}
 				heap.Push(&pq, &state)
 				queuedLinks[succ] = &state
-				transitions[succ] = current.state
 			}
 		}
 	}

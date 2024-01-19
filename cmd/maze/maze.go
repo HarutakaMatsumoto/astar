@@ -5,6 +5,8 @@ import (
 	"math"
 	"os/exec"
 	"strings"
+
+	"github.com/HarutakaMatsumoto/astar"
 )
 
 // Maze drawing sequences.
@@ -109,7 +111,7 @@ func (m maze) Estimate(neighbor interface{}) float64 {
 	return estimateFunc(m.finish, neighbor)
 }
 
-func (m maze) Successors(transitions map[interface{}]interface{}) []interface{} {
+func (m maze) Successors(current astar.StatePointer) []interface{} {
 	successors := []interface{}{}
 
 	checkLocation := func(i, j int) {
