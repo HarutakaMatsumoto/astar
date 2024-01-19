@@ -23,7 +23,6 @@ var (
 
 	// Command line flags.
 	euclidFlag    = flag.Bool("euclid", false, "use Euclid distance")
-	manhattanFlag = flag.Bool("manhattan", true, "use Manhattan distance")
 	estimateFlag  = flag.Float64("estimate", 1.5, "estimate multiplier")
 	costFlag      = flag.Float64("cost", 1.0, "cost multiplier")
 	demoFlag      = flag.Int("demo", 0, "run demo #")

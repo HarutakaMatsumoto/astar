@@ -16,7 +16,7 @@ type Graph struct {
 }
 
 func (g Graph) Start() interface{} { return "Arad" }
-func (g Graph) Finish() bool       { return "Bucharest" == g.curr }
+func (g Graph) Finish() bool       { return g.curr == "Bucharest" }
 
 func (g *Graph) Move(state interface{}) { g.curr = state.(string) }
 func (g Graph) Successors(current StatePointer) []interface{} {

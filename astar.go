@@ -15,45 +15,43 @@
 //
 // The algorithm is implemented as a Search() function which takes astar.Interface as a parameter.
 //
-//
 // Basic usage (counting to 10):
 //
-//   type Number int
+//	type Number int
 //
-//   func (n Number) Start() interface{}             { return Number(1) }
-//   func (n Number) Finish() bool                   { return n == Number(10) }
-//   func (n *Number) Move(x interface{})            { *n = x.(Number) }
-//   func (n Number) Successors() []interface{}      { return []interface{}{n - 1, n + 1} }
-//   func (n Number) Cost(x interface{}) float64     { return 1 }
-//   func (n Number) Estimate(x interface{}) float64 {
-//     return math.Abs(10 - float64(x.(Number)))
-//   }
+//	func (n Number) Start() interface{}             { return Number(1) }
+//	func (n Number) Finish() bool                   { return n == Number(10) }
+//	func (n *Number) Move(x interface{})            { *n = x.(Number) }
+//	func (n Number) Successors() []interface{}      { return []interface{}{n - 1, n + 1} }
+//	func (n Number) Cost(x interface{}) float64     { return 1 }
+//	func (n Number) Estimate(x interface{}) float64 {
+//	  return math.Abs(10 - float64(x.(Number)))
+//	}
 //
-//   var n Number = 10
-//   if path, walk, err := astar.Search(&n); err == nil {
-//     fmt.Println(path)
-//     fmt.Println(walk)
-//   }
-//   // Output: [1 2 3 4 5 6 7 8 9 10] —— the solution.
-//   // [1 2 3 4 5 6 7 8 9 10]         —— states explored by the algorithm
-//                                        before it could find the best solution.
+//	var n Number = 10
+//	if path, walk, err := astar.Search(&n); err == nil {
+//	  fmt.Println(path)
+//	  fmt.Println(walk)
+//	}
+//	// Output: [1 2 3 4 5 6 7 8 9 10] —— the solution.
+//	// [1 2 3 4 5 6 7 8 9 10]         —— states explored by the algorithm
+//	                                     before it could find the best solution.
 //
 // You could allow only “subtract 7” and “add 5” operations to get to 10:
 //
-//   func (n Number) Successors() []interface{} { return []interface{}{n - 7, n + 5} }
+//	func (n Number) Successors() []interface{} { return []interface{}{n - 7, n + 5} }
 //
-//   // Output: [1 6 11 4 9 14 7 12 5 10]
-//   // [1 6 11 4 9 16 14 7 12 -1 2 5 10]
+//	// Output: [1 6 11 4 9 14 7 12 5 10]
+//	// [1 6 11 4 9 16 14 7 12 -1 2 5 10]
 //
 // Or subtract 3, 7, and multiply by 9:
 //
-//   func (n Number) Successors() []interface{} { return []interface{}{n - 3, n - 7, n * 9} }
+//	func (n Number) Successors() []interface{} { return []interface{}{n - 3, n - 7, n * 9} }
 //
-//   // Output: [1 9 6 3 27 20 13 10]
-//   // [1 9 6 2 3 18 11 8 15 12 4 5 -2 -1 0 -5 -6 -4 -3 27 20 13 10]
+//	// Output: [1 9 6 3 27 20 13 10]
+//	// [1 9 6 2 3 18 11 8 15 12 4 5 -2 -1 0 -5 -6 -4 -3 27 20 13 10]
 //
 // Etc.
-//
 package astar
 
 import (
@@ -88,12 +86,12 @@ type OptionalState *state
 type StatePointer *state
 
 type state struct {
-	Pather          interface{}
-	Previous   OptionalState
+	Pather         interface{}
+	Previous       OptionalState
 	Cost, Estimate float64
 
-	index          int
-	isExplored     bool
+	index      int
+	isExplored bool
 }
 
 type states []*state
@@ -175,7 +173,7 @@ func Search(p Interface) OptionalState {
 				}
 			} else {
 				state := state{
-					Pather:    succ,
+					Pather:   succ,
 					Previous: current,
 					Cost:     cost,
 					Estimate: p.Estimate(succ),

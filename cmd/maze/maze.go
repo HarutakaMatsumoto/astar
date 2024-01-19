@@ -148,11 +148,11 @@ func tput(command string, params ...interface{}) string {
 	args := []string{command}
 
 	for _, param := range params {
-		switch param.(type) {
+		switch it := param.(type) {
 		case string:
-			args = append(args, param.(string))
+			args = append(args, it)
 		case int:
-			args = append(args, fmt.Sprintf("%d", param))
+			args = append(args, fmt.Sprintf("%d", it))
 		}
 	}
 
