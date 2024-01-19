@@ -23,7 +23,6 @@ var (
 
 	// Command line flags.
 	euclidFlag    = flag.Bool("euclid", false, "use Euclid distance")
-	manhattanFlag = flag.Bool("manhattan", true, "use Manhattan distance")
 	estimateFlag  = flag.Float64("estimate", 1.5, "estimate multiplier")
 	costFlag      = flag.Float64("cost", 1.0, "cost multiplier")
 	demoFlag      = flag.Int("demo", 0, "run demo #")
@@ -60,10 +59,6 @@ Examples:
 	os.Exit(2)
 }
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
-
 func readFile(filename string) []string {
 	in, err := os.Open(filename)
 	if err != nil {
@@ -90,6 +85,8 @@ func readFile(filename string) []string {
 }
 
 func main() {
+	start := time.Now()
+
 	flag.Usage = usage
 	flag.Parse()
 
@@ -152,8 +149,8 @@ func main() {
 		medium = "File"
 	}
 
-	path, steps, err := astar.Search(maze)
-	if err != nil {
+	state := astar.Search(maze)
+	if state == nil {
 		title = "Yikes! Could not find the path for this one"
 	}
 
@@ -162,6 +159,8 @@ func main() {
 		Maze  [][]string
 	}{
 		Title: title,
-		Maze:  maze.drawMaze(path, steps),
+		Maze:  maze.drawMaze(state),
 	})
+
+	fmt.Print("Time: ", time.Since(start), "\n")
 }

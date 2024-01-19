@@ -1,5 +1,5 @@
-// Finding the shortest path between Arad and Bucharest 
-// on a Romanian road map fragment. The road map is represented 
+// Finding the shortest path between Arad and Bucharest
+// on a Romanian road map fragment. The road map is represented
 // as an undirected graph; edge costs are distances between cities.
 //
 // An example from Stuart Russell and Peter Norvig's
@@ -7,7 +7,7 @@
 package astar
 
 import (
-	"fmt"
+	"testing"
 )
 
 type Graph struct {
@@ -16,10 +16,10 @@ type Graph struct {
 }
 
 func (g Graph) Start() interface{} { return "Arad" }
-func (g Graph) Finish() bool       { return "Bucharest" == g.curr }
+func (g Graph) Finish() bool       { return g.curr == "Bucharest" }
 
 func (g *Graph) Move(state interface{}) { g.curr = state.(string) }
-func (g Graph) Successors(transitions map[interface{}]interface{}) []interface{} {
+func (g Graph) Successors(current StatePointer) []interface{} {
 	successors := []interface{}{}
 	for succ := range g.edges[g.curr] {
 		successors = append(successors, succ)
@@ -60,7 +60,7 @@ func (g Graph) Estimate(given interface{}) float64 {
 	return estimates[given.(string)]
 }
 
-func ExampleSearch_graphTraversal() {
+func TestSearch_graphTraversal(t *testing.T) {
 	g := &Graph{
 		edges: map[string]map[string]float64{
 			"Arad":           {"Zerind": 75, "Timișoara": 118, "Sibiu": 140},
@@ -82,9 +82,24 @@ func ExampleSearch_graphTraversal() {
 			"Urziceni":       {"Bucharest": 85, "Vaslui": 142, "Hârșova": 98},
 			"Vaslui":         {"Urziceni": 142, "Iași": 92},
 			"Zerind":         {"Arad": 75, "Oradea": 71},
-		}}
-	if path, _, err := Search(g); err == nil {
-		fmt.Printf("%q\n", path)
+		},
 	}
-	// Output: ["Arad" "Sibiu" "Râmnicu Vâlcea" "Pitești" "Bucharest"]
+	succesfulPath := []string{"Arad", "Sibiu", "Râmnicu Vâlcea", "Pitești", "Bucharest"}
+
+	state := Search(g)
+	if state == nil {
+		t.Error("Expected state")
+	}
+
+	i := len(succesfulPath) - 1
+	for ; state != nil; state = state.Previous {
+		city := state.Pather.(string)
+		if i < 0 {
+			t.Error("The path is too long!: ", city)
+		}
+		if city != succesfulPath[i] {
+			t.Error("Expected ", succesfulPath[i], " got ", city)
+		}
+		i -= 1
+	}
 }

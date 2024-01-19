@@ -6,22 +6,20 @@
 //
 // Use A* Search to solve it.
 //
-//
-//                    =()=
-//                   .-||--|
-//                  .   ___|
-//                  '==’
-//                   ||
-//                   ||
-//       |     |     ||
-//       |     |
-//       |     |   |    |
-//       |     |   |    |
-//       |     |   |    |
-//       |     |   |    |
-//       +-----+   +----+
-//        9 oz.     4 oz.
-//
+//	             =()=
+//	            .-||--|
+//	           .   ___|
+//	           '==’
+//	            ||
+//	            ||
+//	|     |     ||
+//	|     |
+//	|     |   |    |
+//	|     |   |    |
+//	|     |   |    |
+//	|     |   |    |
+//	+-----+   +----+
+//	 9 oz.     4 oz.
 package astar
 
 import (
@@ -51,7 +49,7 @@ func (s State) Finish() bool {
 func (s *State) Move(x interface{})            { *s = x.(State) }
 func (s State) Cost(x interface{}) float64     { return 1 }
 func (s State) Estimate(x interface{}) float64 { return 1 }
-func (s State) Successors(transitions map[interface{}]interface{}) []interface{} {
+func (s State) Successors(current StatePointer) []interface{} {
 	succ := []interface{}{}
 
 	First, Second, CapFirst, CapSecond := s.First, s.Second, s.p.CapFirst, s.p.CapSecond
@@ -89,11 +87,19 @@ const PouringTmpl = `
 `
 
 func ExampleSearch_pouringPuzzle() {
-	if path, _, err := Search(&State{p: &Puzzle{
+	if state := Search(&State{p: &Puzzle{
 		CapFirst:  9,
 		CapSecond: 4,
 		Goal:      6,
-	}}); err == nil {
+	}}); state != nil {
+		path := []State{}
+		for ; state != nil; state = state.Previous {
+			path = append(path, state.Pather.(State))
+		}
+		for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
+			path[i], path[j] = path[j], path[i]
+		}
+
 		template.Must(template.New("Pouring Puzzle").Parse(PouringTmpl)).Execute(os.Stdout, path)
 	}
 	// Output:

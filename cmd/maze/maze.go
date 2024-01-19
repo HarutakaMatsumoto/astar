@@ -5,6 +5,8 @@ import (
 	"math"
 	"os/exec"
 	"strings"
+
+	"github.com/HarutakaMatsumoto/astar"
 )
 
 // Maze drawing sequences.
@@ -109,7 +111,7 @@ func (m maze) Estimate(neighbor interface{}) float64 {
 	return estimateFunc(m.finish, neighbor)
 }
 
-func (m maze) Successors(transitions map[interface{}]interface{}) []interface{} {
+func (m maze) Successors(current astar.StatePointer) []interface{} {
 	successors := []interface{}{}
 
 	checkLocation := func(i, j int) {
@@ -146,11 +148,11 @@ func tput(command string, params ...interface{}) string {
 	args := []string{command}
 
 	for _, param := range params {
-		switch param.(type) {
+		switch it := param.(type) {
 		case string:
-			args = append(args, param.(string))
+			args = append(args, it)
 		case int:
-			args = append(args, fmt.Sprintf("%d", param))
+			args = append(args, fmt.Sprintf("%d", it))
 		}
 	}
 
@@ -191,15 +193,11 @@ func new(lines []string) *maze {
 
 // drawMaze applies path and explored states to a maze
 // and returns it as a matrix of strings.
-func (m *maze) drawMaze(path, steps []interface{}) [][]string {
+func (m *maze) drawMaze(state astar.OptionalState) [][]string {
 	states := map[location]string{}
 
-	for _, state := range steps {
-		states[state.(location)] = stepRune
-	}
-
-	for _, state := range path {
-		states[state.(location)] = pathRune
+	for ; state != nil; state = state.Previous {
+		states[state.Pather.(location)] = pathRune
 	}
 
 	maze := make([][]string, len(m.maze))

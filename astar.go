@@ -15,54 +15,48 @@
 //
 // The algorithm is implemented as a Search() function which takes astar.Interface as a parameter.
 //
-//
 // Basic usage (counting to 10):
 //
-//   type Number int
+//	type Number int
 //
-//   func (n Number) Start() interface{}             { return Number(1) }
-//   func (n Number) Finish() bool                   { return n == Number(10) }
-//   func (n *Number) Move(x interface{})            { *n = x.(Number) }
-//   func (n Number) Successors() []interface{}      { return []interface{}{n - 1, n + 1} }
-//   func (n Number) Cost(x interface{}) float64     { return 1 }
-//   func (n Number) Estimate(x interface{}) float64 {
-//     return math.Abs(10 - float64(x.(Number)))
-//   }
+//	func (n Number) Start() interface{}             { return Number(1) }
+//	func (n Number) Finish() bool                   { return n == Number(10) }
+//	func (n *Number) Move(x interface{})            { *n = x.(Number) }
+//	func (n Number) Successors() []interface{}      { return []interface{}{n - 1, n + 1} }
+//	func (n Number) Cost(x interface{}) float64     { return 1 }
+//	func (n Number) Estimate(x interface{}) float64 {
+//	  return math.Abs(10 - float64(x.(Number)))
+//	}
 //
-//   var n Number = 10
-//   if path, walk, err := astar.Search(&n); err == nil {
-//     fmt.Println(path)
-//     fmt.Println(walk)
-//   }
-//   // Output: [1 2 3 4 5 6 7 8 9 10] —— the solution.
-//   // [1 2 3 4 5 6 7 8 9 10]         —— states explored by the algorithm
-//                                        before it could find the best solution.
+//	var n Number = 10
+//	if path, walk, err := astar.Search(&n); err == nil {
+//	  fmt.Println(path)
+//	  fmt.Println(walk)
+//	}
+//	// Output: [1 2 3 4 5 6 7 8 9 10] —— the solution.
+//	// [1 2 3 4 5 6 7 8 9 10]         —— states explored by the algorithm
+//	                                     before it could find the best solution.
 //
 // You could allow only “subtract 7” and “add 5” operations to get to 10:
 //
-//   func (n Number) Successors() []interface{} { return []interface{}{n - 7, n + 5} }
+//	func (n Number) Successors() []interface{} { return []interface{}{n - 7, n + 5} }
 //
-//   // Output: [1 6 11 4 9 14 7 12 5 10]
-//   // [1 6 11 4 9 16 14 7 12 -1 2 5 10]
+//	// Output: [1 6 11 4 9 14 7 12 5 10]
+//	// [1 6 11 4 9 16 14 7 12 -1 2 5 10]
 //
 // Or subtract 3, 7, and multiply by 9:
 //
-//   func (n Number) Successors() []interface{} { return []interface{}{n - 3, n - 7, n * 9} }
+//	func (n Number) Successors() []interface{} { return []interface{}{n - 3, n - 7, n * 9} }
 //
-//   // Output: [1 9 6 3 27 20 13 10]
-//   // [1 9 6 2 3 18 11 8 15 12 4 5 -2 -1 0 -5 -6 -4 -3 27 20 13 10]
+//	// Output: [1 9 6 3 27 20 13 10]
+//	// [1 9 6 2 3 18 11 8 15 12 4 5 -2 -1 0 -5 -6 -4 -3 27 20 13 10]
 //
 // Etc.
-//
 package astar
 
 import (
 	"container/heap"
-	"errors"
 )
-
-// ErrNotFound means that the final state cannot be reached from the given start state.
-var ErrNotFound = errors.New("final state is not reachable")
 
 // Interface describes a type suitable for A* search. Any type can do as long as
 // it can change its current state and tell legal moves from it.
@@ -71,14 +65,14 @@ type Interface interface {
 	// Initial state.
 	Start() interface{}
 
-	// Is this state final?
+	// Is this state final or canceled?
 	Finish() bool
 
 	// Move to a new state.
 	Move(interface{})
 
 	// Available moves from the current state.
-	Successors(transitions map[interface{}]interface{}) []interface{}
+	Successors(current StatePointer) []interface{}
 
 	// Path cost between the current and the given state.
 	Cost(interface{}) float64
@@ -88,17 +82,23 @@ type Interface interface {
 	Estimate(interface{}) float64
 }
 
+type OptionalState *state
+type StatePointer *state
+
 type state struct {
-	state          interface{}
-	cost, estimate float64
-	index          int
+	Pather         interface{}
+	Previous       OptionalState
+	Cost, Estimate float64
+
+	index      int
+	isExplored bool
 }
 
 type states []*state
 
 func (pq states) Len() int           { return len(pq) }
 func (pq states) Empty() bool        { return len(pq) == 0 }
-func (pq states) Less(i, j int) bool { return pq[i].cost+pq[i].estimate < pq[j].cost+pq[j].estimate }
+func (pq states) Less(i, j int) bool { return pq[i].Cost+pq[i].Estimate < pq[j].Cost+pq[j].Estimate }
 func (pq states) Swap(i, j int) {
 	pq[i], pq[j] = pq[j], pq[i]
 
@@ -123,27 +123,17 @@ func (pq *states) Pop() interface{} {
 }
 
 // Search finds the p.Finish() state from the given p.Start() state by
-// invoking p.Successors() and p.Move() at each step. Search returns two slices:
-// 1) the shortest path to the final state, and 2) a sequence of explored states.
-// If the shortest path cannot be found, ErrNotFound error is returned.
-func Search(p Interface) ([]interface{}, []interface{}, error) {
+// invoking p.Successors() and p.Move() at each step.
+// Search returns the final state.
+// If the shortest path cannot be found, nil is returned.
+func Search(p Interface) OptionalState {
 	// Priority queue of states on the frontier.
 	// Initialized with the start state.
-	pq := states{{state: p.Start(), estimate: p.Estimate(p.Start())}}
+	pq := states{{Pather: p.Start(), Estimate: p.Estimate(p.Start())}}
 	heap.Init(&pq)
 
 	// States currently on the frontier.
 	queuedLinks := map[interface{}]*state{}
-
-	// States explored so far.
-	explored := map[interface{}]bool{}
-
-	// State transitions from start to finish (to reconstruct
-	// the shortest path at the end of the search).
-	transitions := map[interface{}]interface{}{}
-
-	// Sequence of states in the order they have been explored.
-	steps := []interface{}{}
 
 	p.Move(p.Start())
 
@@ -151,63 +141,48 @@ func Search(p Interface) ([]interface{}, []interface{}, error) {
 	for !pq.Empty() {
 		// Pick a state with a minimum Cost() + Estimate() value.
 		current := heap.Pop(&pq).(*state)
-		delete(queuedLinks, current.state)
-		explored[current.state] = true
+		current.isExplored = true
 
 		// Move to the new state.
-		p.Move(current.state)
-
-		steps = append(steps, current.state)
+		p.Move(current.Pather)
 
 		// If the state is final, terminate.
 		if p.Finish() {
 			// Reconstruct the path from finish to start.
-			return func() []interface{} {
-				path := []interface{}{current.state}
-				for {
-					if _, ok := transitions[current.state]; !ok {
-						break
-					}
-					current.state = transitions[current.state]
-
-					// Reverse.
-					path = append([]interface{}{current.state}, path...)
-
-				}
-				return path
-			}(), steps, nil
+			return current
 		}
 
-		for _, succ := range p.Successors(transitions) {
+		for _, succ := range p.Successors(current) {
 			// Don't re-explore.
-			if explored[succ] {
+			queuedState, ok := queuedLinks[succ]
+			if ok && queuedState.isExplored {
 				continue
 			}
 
 			// Path cost so far.
-			cost := current.cost + p.Cost(succ)
+			cost := current.Cost + p.Cost(succ)
 
 			// Add a successor to the frontier.
-			if queuedState, ok := queuedLinks[succ]; ok {
+			if ok {
 				// If the successor is already on the frontier,
 				// update its path cost.
-				if cost < queuedState.cost {
-					queuedState.cost = cost
+				if cost < queuedState.Cost {
+					queuedState.Cost = cost
 					heap.Fix(&pq, queuedState.index)
-					transitions[succ] = current.state
+					queuedState.Previous = current
 				}
 			} else {
 				state := state{
-					state:    succ,
-					cost:     cost,
-					estimate: p.Estimate(succ),
+					Pather:   succ,
+					Previous: current,
+					Cost:     cost,
+					Estimate: p.Estimate(succ),
 				}
 				heap.Push(&pq, &state)
 				queuedLinks[succ] = &state
-				transitions[succ] = current.state
 			}
 		}
 	}
 
-	return nil, steps, ErrNotFound
+	return nil
 }
